@@ -1,6 +1,9 @@
-# Tauri + Vanilla TS
+# Website Screen Capture
+The project focuses on creating screen captures of website pages. And displaying them as a quick shortcut dashboard. Something like a 'Live Tile'.
 
-This template should help get you started developing with Tauri in vanilla HTML, CSS and Typescript.
+Using the Rust Programming Language & Tauri Framework + Vanilla.
+
+Mainly been working on the backend, enabling webpage capture and filtering specific areas to save as images. The project also includes a feature to enter search terms on a webpage and capture the results. Currently, fixed parameters illustrate the function.
 
 ## Recommended IDE Setup
 
