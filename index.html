@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShortCutHex</title>
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>ShortCutHex</h1>
+      <p>Alpha version, experimenting with Tauri framework & Rust</p>
+      <p id="msg-last-refreshed"></p>
+    </div>
+
+    <form class="row" id="refresh-form">
+      <button type="submit" onclick="reloadImages()">Refresh</button>
+    </form>
+
+    <div class="container">
+      <div class="row">
+        <div class="container-md" style="padding: 20px;">
+          <a href="https://getbootstrap.com/docs/5.0/utilities/float/#responsive" target="_blank">
+            <img src="/src/assets/screenshot.jpeg" class="img-fluid img1">
+          </a>
+          <details>
+            <summary>Parameters</summary>
+            <p class="container-info">https://getbootstrap.com/docs/5.0/content/images/ <br/>
+              <b>Search Box Element</b> input#search-input <br/>
+              <b>Search Text</b> Responsive <br/>
+              <b>Delay Search</b> 0
+              </p>
+          </details>
+        </div>
+        <div class="container-md" style="padding: 20px;">
+          <a href="https://www.rust-lang.org/" target="_blank">
+            <img src="/src/assets/screenshot2.jpeg" class="img-fluid img2">
+          </a>
+          <details>
+            <summary>Parameters</summary>
+            <p class="container-info">https://www.rust-lang.org/ <br/>
+              Going directly to page only. 
+            </p>
+          </details>           
+        </div>
+        <div class="container-md" style="padding: 20px;">
+          <a href="https://www.bing.com/search?q=premier+league+football+scores+table" target="_blank">
+            <img src="/src/assets/screenshot3.png" class="img-fluid img3">
+          </a>
+          <details>
+            <summary>Parameters</summary>
+            <p class="container-info">https://www.bing.com/ <br/>
+              <b>Search Box Element</b> #sb_form_q <br/>
+              <b>Search Text</b> premier league football scores table <br/>
+              <b>Find Element</b> #b_results > li > div <br/>
+              <b>Delay Search</b> 4
+              </p>
+          </details>
+        </div>
+      </div>
+    </div>
+  </body>
+
+</html>
