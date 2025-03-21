@@ -7,6 +7,8 @@ use headless_chrome::protocol::cdp::Page;
 use std::{thread, time::Duration};
 use chrono::prelude::*;
 
+use crate::display::clear; // Import the Display struct
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Panel {
     pub id: i32,
@@ -37,48 +39,74 @@ fn browser_search(find_url : &str, find_box : &str, find_text : &str, find_eleme
     let tab = browser.new_tab()?;
     let path_name = r#"..\src\assets\"#;
 
-    // Navigate to url
-    tab.navigate_to(find_url)?;
+    match clear(path_name, image_home_name, image_element_name) {
+        Ok(()) => println!("Images processed successfully!"),
+        Err(e) => eprintln!("Error: {}", e),
+    }
     
-    if find_box.len() >= 5
+    // Navigate to URL
+    let found_url = match tab.navigate_to(find_url) {
+        Ok(_) => {
+            println!("Successfully navigated to URL: {}", find_url);
+            true
+        }
+        Err(e) => {
+            println!("Failed to navigate to URL: {} - {}", find_url, e);
+            false
+        }
+    };
+        
+    if found_url
     {
-        let _test = find_element_check(tab.clone(), find_box);
-        if _test.contains("Found Element") {
-            // Wait for network/javascript/dom to make the search-box available
-            // and click it.
-            tab.wait_for_element(find_box)?.click()?; //format input#id
-
-            // Type in a query and press `Enter`
-            tab.type_str(find_text)?.press_key("Enter")?; //text to search
+        if !find_box.is_empty() {
+            println!("Checking for search box: {}", find_box);
+            let test = find_element_check(tab.clone(), find_box);
+            println!("Search box check result: {}", test);
+            if test.contains("Found Element") {
+                tab.wait_for_element(find_box)?.click()?;  // Wait for network/javascript/dom to make the search-box available and click it.
+                tab.type_str(find_text)?.press_key("Enter")?; // Type in a query and press `Enter`
+            }
         }
-    }
 
-    // Take a screenshot of the entire browser window
-    let jpeg_data = tab.capture_screenshot(
-        Page::CaptureScreenshotFormatOption::Jpeg,
-        None,
-        None,
-        true)?;
-    // Save the screenshot to disc    
-    std::fs::write(format!("{}{}", path_name, image_home_name), jpeg_data)?;
+        // Take a screenshot of the entire browser window
+        let jpeg_data =     
+        match tab.capture_screenshot(
+            Page::CaptureScreenshotFormatOption::Jpeg,
+            None, None, true,)  {
+            Ok(_k) => _k,
+            Err(_e) => Vec::new(), //empty
+        };
 
-    if delay_search > 0 { //delay after search 
-        thread::sleep(Duration::from_millis(4)); 
-    }
+        // Check if jpeg_data contains data (is not empty)
+        if jpeg_data.is_empty() {
+            println!("Screenshot data is empty. Something went wrong!");
+        } else {
+            println!("Saving screenshot as {}", image_home_name);
+            std::fs::write(format!("{}{}", path_name, image_home_name), jpeg_data)?;
+        }    
 
-    if find_element.len() >= 5  //test may have to add this https://developer.mozilla.org/en-US/docs/Web/HTML (it only picks up these tags)
-    { 
-        let _test = find_element_check(tab.clone(), find_element);
-        if _test.contains("Found Element") {
-            // Take a screenshot of just the one part    
-            let png_data = tab
-                .wait_for_element(find_element)? //format "#mw-content-text > div > table.infobox.vevent"
-                .capture_screenshot(Page::CaptureScreenshotFormatOption::Png)?;
-            // Save the screenshot to disc
-            std::fs::write(format!("{}{}", path_name, image_element_name), png_data)?; //for path can be r#"..\src\assets\screenshot.png"#
+        if delay_search > 0 { //delay after search 
+            println!("Delaying for {} milliseconds...", delay_search);
+            thread::sleep(Duration::from_millis(4)); 
+        }
+
+        if !find_element.is_empty() { //test may have to add this https://developer.mozilla.org/en-US/docs/Web/HTML (it only picks up these tags)
+            println!("Checking for element: {}", find_element);
+            let test = find_element_check(tab.clone(), find_element);
+            println!("Element check result: {}", test);
+            if test.contains("Found Element") {
+                println!("Capturing screenshot of specific element...");
+                // Take a screenshot of just the one part 
+                let png_data = tab.wait_for_element(find_element)?
+                    .capture_screenshot(Page::CaptureScreenshotFormatOption::Png)?;
+                println!("Saving element screenshot as {}", image_element_name);
+                // Save the screenshot to disc
+                std::fs::write(format!("{}{}", path_name, image_element_name), png_data)?;
+            }
         }
     }
     
+    println!("End for browser_search function.");
     Ok(())
 }
 

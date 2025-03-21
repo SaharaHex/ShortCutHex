@@ -1,7 +1,8 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod manager;
+mod display; // Include the display module
+mod manager; // Include the manager module
 use manager::get_data;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
