@@ -2,7 +2,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod display; // Include the display module
-mod manager; // Include the manager module
+mod web_scraper; // Include the web_scraper class 
+mod manager;
 use manager::get_data;
 
 // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command

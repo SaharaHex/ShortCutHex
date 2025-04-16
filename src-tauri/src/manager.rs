@@ -1,5 +1,3 @@
-use serde::{Serialize, Deserialize};
-
 use std::error::Error;
 use std::sync::Arc;
 use headless_chrome::{Browser, Tab};
@@ -8,63 +6,88 @@ use std::{thread, time::Duration};
 use chrono::prelude::*;
 
 use crate::display::clear; // Import the Display struct
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Panel {
-    pub id: i32,
-    pub url: String,
-    pub search_box : String, //format parent#node_id e.g., input#id
-    pub search_text : String,
-    pub search_element : String, //format parent#node_id div#id and has to be HTML elements (https://developer.mozilla.org/en-US/docs/Web/HTML) can have other formats #mw-content-text > div > table.infobox.vevent
-    pub image_home : String,
-    pub image_element : String,
-    pub image_home_comment : String, //e.g., if item was found or not 
-    pub image_element_comment : String, //e.g., if item was found or not 
-}
+use crate::web_scraper::WebScraper; // Import the web_scraper class 
 
 pub fn get_data() -> String {    
+
+    // Creating an instance of WebScraper for panel 1
+    let panel1 = WebScraper::new(
+        1,
+        "https://getbootstrap.com/docs/5.0/content/images/".to_string(),
+        "input#search-input".to_string(),
+        "Responsive".to_string(),
+        "".to_string(),
+        0,
+        "screenshot.jpeg".to_string(),
+        "screenshot.png".to_string(),
+    );
+
+    // Creating an instance of WebScraper for panel 2
+    let panel2 = WebScraper::new(
+        2,
+        "https://www.rust-lang.org/".to_string(),
+        "".to_string(),
+        "".to_string(),
+        "".to_string(),
+        0,
+        "creenshot2.jpeg".to_string(),
+        "screenshot2.png".to_string(),
+    );
+
+    // Creating an instance of WebScraper for panel 3
+    let panel3 = WebScraper::new(
+        3,
+        "https://www.bing.com/".to_string(),
+        "#sb_form_q".to_string(),
+        "premier league football scores table".to_string(),
+        "#b_results > li > div".to_string(),
+        4,
+        "screenshot3.jpeg".to_string(),
+        "screenshot3.png".to_string(),
+    );    
+
     // Screenshot a pages.
-    assert!(browser_search("https://getbootstrap.com/docs/5.0/content/images/", "input#search-input", "Responsive", "", 0 , "screenshot.jpeg", "screenshot.png").is_ok());
+    assert!(browser_search(panel1).is_ok());
 
-    assert!(browser_search("https://www.rust-lang.org/", "", "", "", 0, "screenshot2.jpeg", "screenshot2.png").is_ok());
+    assert!(browser_search(panel2).is_ok());
 
-    assert!(browser_search("https://www.bing.com/", "#sb_form_q", "premier league football scores table", "#b_results > li > div", 4, "screenshot3.jpeg", "screenshot3.png").is_ok());
+    assert!(browser_search(panel3).is_ok());
 
     let local_time: DateTime<Local> = Local::now();
     return format!("{}", local_time.format("%Y-%m-%d %H:%M:%S"))
 }
 
-fn browser_search(find_url : &str, find_box : &str, find_text : &str, find_element : &str, delay_search : i32, image_home_name : &str, image_element_name : &str) -> Result<(), Box<dyn Error>> {
+fn browser_search(webpage : WebScraper) -> Result<(), Box<dyn Error>> {
     let browser = Browser::default()?;
     let tab = browser.new_tab()?;
     let path_name = r#"..\src\assets\"#;
 
-    match clear(path_name, image_home_name, image_element_name) {
+    match clear(path_name, &webpage.image_home, &webpage.image_element) {
         Ok(()) => println!("Images processed successfully!"),
         Err(e) => eprintln!("Error: {}", e),
     }
     
     // Navigate to URL
-    let found_url = match tab.navigate_to(find_url) {
+    let found_url = match tab.navigate_to(&webpage.url) {
         Ok(_) => {
-            println!("Successfully navigated to URL: {}", find_url);
+            println!("Successfully navigated to URL: {}", &webpage.url);
             true
         }
         Err(e) => {
-            println!("Failed to navigate to URL: {} - {}", find_url, e);
+            println!("Failed to navigate to URL: {} - {}", &webpage.url, e);
             false
         }
     };
         
     if found_url
     {
-        if !find_box.is_empty() {
-            println!("Checking for search box: {}", find_box);
-            let test = find_element_check(tab.clone(), find_box);
+        if !webpage.search_box.is_empty() {
+            println!("Checking for search box: {}", webpage.search_box);
+            let test = find_element_check(tab.clone(), &webpage.search_box);
             println!("Search box check result: {}", test);
             if test.contains("Found Element") {
-                tab.wait_for_element(find_box)?.click()?;  // Wait for network/javascript/dom to make the search-box available and click it.
-                tab.type_str(find_text)?.press_key("Enter")?; // Type in a query and press `Enter`
+                tab.wait_for_element(&webpage.search_box)?.click()?;  // Wait for network/javascript/dom to make the search-box available and click it.
+                tab.type_str(&webpage.search_text)?.press_key("Enter")?; // Type in a query and press `Enter`
             }
         }
 
@@ -81,31 +104,32 @@ fn browser_search(find_url : &str, find_box : &str, find_text : &str, find_eleme
         if jpeg_data.is_empty() {
             println!("Screenshot data is empty. Something went wrong!");
         } else {
-            println!("Saving screenshot as {}", image_home_name);
-            std::fs::write(format!("{}{}", path_name, image_home_name), jpeg_data)?;
+            println!("Saving screenshot as {}", webpage.image_home);
+            std::fs::write(format!("{}{}", path_name, webpage.image_home), jpeg_data)?;
         }    
 
-        if delay_search > 0 { //delay after search 
-            println!("Delaying for {} milliseconds...", delay_search);
+        if webpage.delay_search > 0 { //delay after search 
+            println!("Delaying for {} milliseconds...", webpage.delay_search);
             thread::sleep(Duration::from_millis(4)); 
         }
 
-        if !find_element.is_empty() { //test may have to add this https://developer.mozilla.org/en-US/docs/Web/HTML (it only picks up these tags)
-            println!("Checking for element: {}", find_element);
-            let test = find_element_check(tab.clone(), find_element);
+        if !webpage.search_element.is_empty() { //test may have to add this https://developer.mozilla.org/en-US/docs/Web/HTML (it only picks up these tags)
+            println!("Checking for element: {}", webpage.search_element);
+            let test = find_element_check(tab.clone(), &webpage.search_element);
             println!("Element check result: {}", test);
             if test.contains("Found Element") {
                 println!("Capturing screenshot of specific element...");
                 // Take a screenshot of just the one part 
-                let png_data = tab.wait_for_element(find_element)?
+                let png_data = tab.wait_for_element(&webpage.search_element)?
                     .capture_screenshot(Page::CaptureScreenshotFormatOption::Png)?;
-                println!("Saving element screenshot as {}", image_element_name);
+                println!("Saving element screenshot as {}", webpage.image_element);
                 // Save the screenshot to disc
-                std::fs::write(format!("{}{}", path_name, image_element_name), png_data)?;
+                std::fs::write(format!("{}{}", path_name, webpage.image_element), png_data)?;
             }
         }
     }
     
+    webpage.display_parameters();
     println!("End for browser_search function.");
     Ok(())
 }
